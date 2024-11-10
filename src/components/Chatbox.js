@@ -186,7 +186,7 @@ const Chatbox = () => {
                                     }
                                 }}
                             />
-                            <a className="ms-3" onClick={handleSendMessage}>
+                            <a href="#" className="ms-3" onClick={handleSendMessage}>
                                 <MDBIcon fas icon="paper-plane" />
                             </a>
                         </MDBCardFooter>
