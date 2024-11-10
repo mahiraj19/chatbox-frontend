@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import {
     MDBBtn,
     MDBContainer,
@@ -10,7 +9,6 @@ import {
     MDBCardImage,
     MDBInput,
     MDBIcon,
-    MDBCheckbox,
   } from "mdb-react-ui-kit";
   import "mdb-react-ui-kit/dist/css/mdb.min.css";
   import "@fortawesome/fontawesome-free/css/all.min.css";
