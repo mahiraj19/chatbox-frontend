@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import axios from "axios";
 import { signup } from "../services/authService";
 import {
   MDBBtn,
