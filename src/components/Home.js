@@ -1,4 +1,3 @@
-// src/components/Home.js
 import React from 'react';
 import UserList from './Users';
 
