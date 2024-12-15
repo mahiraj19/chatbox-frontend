@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { io } from "socket.io-client";
+import "./index.css";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
 import {
@@ -12,9 +13,13 @@ import {
   MDBIcon,
   MDBCardFooter,
 } from "mdb-react-ui-kit";
-import VideoCall from "./VideoCall";
+import { Editor } from "@tinymce/tinymce-react";
+import { GiphyFetch } from "@giphy/js-fetch-api";
+import { Grid } from "@giphy/react-components";
+import { Modal } from "antd";
 
 const socket = io("http://localhost:3001");
+const gf = new GiphyFetch("6TKaSjZEdZFk4LjhHl1JQRekL47k6gbt");
 
 const Chatbox = () => {
   const navigate = useNavigate();
@@ -26,6 +31,9 @@ const Chatbox = () => {
   const [usersOnline, setUsersOnline] = useState(new Set());
   const [isTyping, setIsTyping] = useState(false);
   const userId = localStorage.getItem("userId");
+  const [userData, setUserData] = useState();
+  const editorRef = useRef(null);
+  const [showGifPicker, setShowGifPicker] = useState(false); // State to toggle GIF picker
 
   useEffect(() => {
     const fetchMessages = async () => {
@@ -43,39 +51,87 @@ const Chatbox = () => {
         console.error("Error fetching messages:", error);
       }
     };
+    const fetchUserData = async () => {
+      try {
+        const response = await axios.get(
+          `http://localhost:3001/api/users/user/${receiverId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+        setUserData(response?.data);
+        // setMessages(response.data);
+      } catch (error) {
+        console.error("Error fetching messages:", error);
+      }
+    };
+    fetchUserData();
     fetchMessages();
   }, [receiverId]);
+  const selectGif = async (gif) => {
+    const gifUrl = gif.images.original.url;
+
+    const newMessage = {
+      receiver: receiverId, 
+      content: gifUrl,
+    };
+
+    socket.emit("sendMessage", { ...newMessage, sender: userId });
+
+    try {
+      const response = await axios.post(
+        "http://localhost:3001/api/chat",
+        newMessage,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+      console.log("GIF sent successfully:", response.data);
+    } catch (error) {
+      console.error("Error sending GIF:", error);
+    }
+
+    setMessages((prevMessages) => [
+      ...prevMessages,
+      { ...newMessage, sender: userId },
+    ]);
+    setShowGifPicker(false);
+  };
 
   useEffect(() => {
     socket.emit("joinRoom", userId);
-    socket.on('connect', () => {
-      console.log('Socket connected:', socket.id);
-  });
+    socket.on("connect", () => {
+      console.log("Socket connected:", socket.id);
+    });
 
     socket.on("receiveMessage", (newMessage) => {
       setMessages((prevMessages) => [...prevMessages, newMessage]);
     });
 
-    socket.on('userOnline', (userId) => {
-      console.log(userId, 'online');
-      setUsersOnline(prevUsers => new Set(prevUsers).add(userId));
-  });
+    socket.on("userOnline", (userId) => {
+      console.log(userId, "online");
+      setUsersOnline((prevUsers) => new Set(prevUsers).add(userId));
+    });
 
-  socket.on('userOffline', (userId) => {
-      console.log(userId, 'offline');
-      setUsersOnline(prevUsers => {
-          const updatedUsers = new Set(prevUsers);
-          updatedUsers.delete(userId);
-          return updatedUsers;
+    socket.on("userOffline", (userId) => {
+      console.log(userId, "offline");
+      setUsersOnline((prevUsers) => {
+        const updatedUsers = new Set(prevUsers);
+        updatedUsers.delete(userId);
+        return updatedUsers;
       });
-  });
+    });
     socket.on("typing", () => setIsTyping(true));
     socket.on("stopTyping", () => setIsTyping(false));
 
     return () => {
       socket.off("receiveMessage");
-      socket.off('userOnline');
-      socket.off('userOffline');
+      socket.off("userOnline");
+      socket.off("userOffline");
       socket.off("typing");
       socket.off("stopTyping");
     };
@@ -88,33 +144,36 @@ const Chatbox = () => {
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (message.trim()) {
+      const plainTextMessage = message.replace(/<[^>]*>?/gm, "");
       const newMessage = {
         sender: userId,
         receiver: receiverId,
-        content: message,
+        content: plainTextMessage,
       };
-  
+
       socket.emit("sendMessage", newMessage);
       socket.emit("stopTyping", receiverId);
-  
+
       setMessages((prevMessages) => [...prevMessages, newMessage]);
-  
+
       try {
         await axios.post("http://localhost:3001/api/chat", newMessage, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         });
-        setMessage(""); // Clear the input field
+        if (editorRef.current) {
+          editorRef.current.setContent("");
+        }
+        setMessage("");
       } catch (error) {
         console.error("Error sending message:", error);
       }
     }
   };
-  
 
   const handleTyping = (e) => {
-    setMessage(e.target.value);
+    setMessage(e);
     socket.emit("typing", receiverId);
 
     if (typingTimeoutRef.current) {
@@ -132,8 +191,11 @@ const Chatbox = () => {
     }
   };
 
-  const handleEndCall = () => {
-    console.log("Call ended");
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage(e);
+    }
   };
 
   const onBack = () => navigate("/home");
@@ -151,8 +213,9 @@ const Chatbox = () => {
               }}
             >
               <MDBIcon fas icon="angle-left" onClick={onBack} />
-              <p className="mb-0 fw-bold">{console.log(usersOnline.has(receiverId))}
-                Live chat{" "}
+              <p className="mb-0 fw-bold">
+                {console.log(usersOnline.has(receiverId))}
+                {userData?.name}
                 {usersOnline.has(receiverId) ? (
                   <span className="text-success">(Online)</span>
                 ) : (
@@ -162,7 +225,6 @@ const Chatbox = () => {
               <MDBIcon fas icon="times" onClick={onBack} />
               {/* <VideoCall userId={userId} receiverId={receiverId} onEndCall={handleEndCall} /> */}
             </MDBCardHeader>
-
             <MDBCardBody style={{ height: "400px", overflowY: "auto" }}>
               {messages.map((msg, index) => (
                 <div key={index}>
@@ -180,7 +242,15 @@ const Chatbox = () => {
                           backgroundColor: "rgba(57, 192, 237,.2)",
                         }}
                       >
-                        <p className="small mb-0">{msg.content}</p>
+                        {msg.content.startsWith("http") ? (
+                          <img
+                            src={msg.content}
+                            alt="GIF"
+                            style={{ maxWidth: "200px", borderRadius: "8px" }}
+                          />
+                        ) : (
+                          <p className="small mb-0">{msg.content}</p>
+                        )}
                       </div>
                     </div>
                   ) : (
@@ -192,7 +262,15 @@ const Chatbox = () => {
                           backgroundColor: "#fbfbfb",
                         }}
                       >
-                        <p className="small mb-0">{msg.content}</p>
+                        {msg.content.startsWith("http") ? (
+                          <img
+                            src={msg.content}
+                            alt="GIF"
+                            style={{ maxWidth: "200px", borderRadius: "8px" }}
+                          />
+                        ) : (
+                          <p className="small mb-0">{msg.content}</p>
+                        )}
                       </div>
                       <img
                         src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-chat/ava2-bg.webp"
@@ -203,31 +281,68 @@ const Chatbox = () => {
                   )}
                 </div>
               ))}
+
               {isTyping && (
-                <p className="text-muted small">The other user is typing...</p>
+                <p className="text-muted small">
+                  {userData?.name} is typing...
+                </p>
               )}
               <div ref={messagesEndRef} />
             </MDBCardBody>
 
             <MDBCardFooter className="text-muted d-flex justify-content-start align-items-center p-3">
-              <img
-                src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-chat/ava3-bg.webp"
-                alt="avatar 3"
-                style={{ width: "45px", height: "100%" }}
-              />
-              <input
-                type="text"
-                className="form-control form-control-lg"
-                placeholder="Type message"
-                value={message}
-                onChange={handleTyping}
-                onKeyDown={(e) => e.key === "Enter" && handleSendMessage(e)}
+              <Editor
+                apiKey="10vgweay22hk7uk1mur0qmeq2dilhs68jjqjfdmlul5x73z3"
+                init={{
+                  height: 100,
+                  width: 1000,
+                  menubar: false,
+                  plugins: ["emoticons"],
+                  toolbar: "emoticons customInsertGifButton",
+                  toolbar_location: "bottom",
+                  statusbar: false,
+                  content_style:
+                    "body { font-family:Arial,sans-serif; font-size:14px }",
+                  setup: (editor) => {
+                    editor.ui.registry.addButton("customInsertGifButton", {
+                      text: "GIF",
+                      onAction: () => setShowGifPicker(true),
+                    });
+                  },
+                }}
+                onEditorChange={handleTyping}
+                onKeyDown={handleKeyDown}
+                onInit={(evt, editor) => {
+                  editorRef.current = editor;
+                }}
               />
               <a className="ms-3" onClick={handleSendMessage}>
                 <MDBIcon fas icon="paper-plane" />
               </a>
             </MDBCardFooter>
           </MDBCard>
+          <Modal
+            bodyStyle={{
+              maxHeight: "400px",
+              overflowY: "auto",
+            }}
+            title="Basic Modal"
+            open={showGifPicker}
+            onCancel={() => setShowGifPicker(false)}
+          >
+            <div className="gif-picker">
+              <Grid
+                fetchGifs={(offset) => gf.trending({ offset, limit: 10 })}
+                onGifClick={(gif, event) => {
+                  event.preventDefault();
+                  selectGif(gif);
+                }}
+                width={400}
+                columns={3}
+                gutter={6}
+              />
+            </div>
+          </Modal>
         </MDBCol>
       </MDBRow>
     </MDBContainer>
