@@ -21,9 +21,9 @@ const PendingRequests = () => {
                 });
 
                 const filteredRequests = response.data.filter(
-                    (request) => request.sender._id !== UserId
+                    (request) => request.sender._id !== UserId && request.status == "pending"
                 );
-
+                
                 setRequests(filteredRequests);
             } catch (error) {
                 console.error('Error fetching pending requests:', error);
