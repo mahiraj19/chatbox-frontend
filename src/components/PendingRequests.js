@@ -14,7 +14,7 @@ const PendingRequests = () => {
     useEffect(() => {
         const fetchRequests = async () => {
             try {
-                const response = await axios.get('http://localhost:3001/api/chatrequest/pending-requests', {
+                const response = await axios.get(`${process.env.REACT_APP_API_URL}chatrequest/pending-requests`, {
                     headers: {
                         Authorization: `Bearer ${localStorage.getItem('token')}`,
                     },
@@ -61,7 +61,7 @@ const PendingRequests = () => {
     const acceptRequest = async (requestId) => {
         try {
             const response = await axios.post(
-                'http://localhost:3001/api/chatrequest/accept-request',
+                `${process.env.REACT_APP_API_URL}chatrequest/accept-request`,
                 { requestId },
                 {
                     headers: {
@@ -88,7 +88,7 @@ const PendingRequests = () => {
     const rejectRequest = async (requestId) => {
         try {
             const response = await axios.post(
-                'http://localhost:3001/api/chatrequest/reject-request',
+                `${process.env.REACT_APP_API_URL}chatrequest/reject-request`,
                 { requestId },
                 {
                     headers: {

@@ -39,7 +39,7 @@ const Chatbox = () => {
     const fetchMessages = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:3001/api/chat/${receiverId}`,
+          `${process.env.REACT_APP_API_URL}chat/${receiverId}`,
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -54,7 +54,7 @@ const Chatbox = () => {
     const fetchUserData = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:3001/api/users/user/${receiverId}`,
+          `${process.env.REACT_APP_API_URL}users/user/${receiverId}`,
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -82,7 +82,7 @@ const Chatbox = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:3001/api/chat",
+        `${process.env.REACT_APP_API_URL}chat`,
         newMessage,
         {
           headers: {
@@ -157,7 +157,7 @@ const Chatbox = () => {
       setMessages((prevMessages) => [...prevMessages, newMessage]);
 
       try {
-        await axios.post("http://localhost:3001/api/chat", newMessage, {
+        await axios.post(`${process.env.REACT_APP_API_URL}chat`, newMessage, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
@@ -214,7 +214,11 @@ const Chatbox = () => {
             >
               <MDBIcon fas icon="angle-left" onClick={onBack} />
               <p className="mb-0 fw-bold">
-                {console.log(usersOnline.has(receiverId))}
+              {userData?.profileImage?.length > 0 && (<img
+                  src={`http://localhost:3001/${userData?.profileImage}`}
+                  alt="Profile Preview"
+                  style={{ width: '30px', height: '30px', borderRadius: '50%', marginRight:'2px' }}
+                />)}
                 {userData?.name}
                 {usersOnline.has(receiverId) ? (
                   <span className="text-success">(Online)</span>
@@ -230,11 +234,11 @@ const Chatbox = () => {
                 <div key={index}>
                   {msg.sender !== userId ? (
                     <div className="d-flex flex-row justify-content-start mb-4">
-                      <img
+                      {/* <img
                         src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-chat/ava1-bg.webp"
                         alt="avatar 1"
                         style={{ width: "45px", height: "100%" }}
-                      />
+                      /> */}
                       <div
                         className="p-3 ms-3"
                         style={{
@@ -272,11 +276,11 @@ const Chatbox = () => {
                           <p className="small mb-0">{msg.content}</p>
                         )}
                       </div>
-                      <img
+                      {/* <img
                         src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-chat/ava2-bg.webp"
                         alt="avatar 2"
                         style={{ width: "45px", height: "100%" }}
-                      />
+                      /> */}
                     </div>
                   )}
                 </div>

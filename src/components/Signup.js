@@ -129,16 +129,6 @@ const Signup = () => {
                 {errors.password && (
                   <p className="text-danger small">{errors.password}</p>
                 )}
-
-                <div className="mb-4">
-                  <MDBCheckbox
-                    name="flexCheck"
-                    value=""
-                    id="flexCheckDefault"
-                    label="Subscribe to our newsletter"
-                  />
-                </div>
-
                 <MDBBtn className="mb-4" size="lg" type="submit">
                   Register
                 </MDBBtn>
