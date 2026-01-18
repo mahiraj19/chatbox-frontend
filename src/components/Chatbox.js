@@ -13,10 +13,10 @@ import {
   MDBIcon,
   MDBCardFooter,
 } from "mdb-react-ui-kit";
-import { Editor } from "@tinymce/tinymce-react";
 import { GiphyFetch } from "@giphy/js-fetch-api";
 import { Grid } from "@giphy/react-components";
 import { Modal } from "antd";
+import ChatBoxEditor from "./ChatboxEditor";
 
 const socket = io("http://localhost:3001");
 const gf = new GiphyFetch("6TKaSjZEdZFk4LjhHl1JQRekL47k6gbt");
@@ -295,34 +295,13 @@ const Chatbox = () => {
             </MDBCardBody>
 
             <MDBCardFooter className="text-muted d-flex justify-content-start align-items-center p-3">
-              <Editor
-                apiKey="10vgweay22hk7uk1mur0qmeq2dilhs68jjqjfdmlul5x73z3"
-                init={{
-                  height: 100,
-                  width: 1000,
-                  menubar: false,
-                  plugins: ["emoticons"],
-                  toolbar: "emoticons customInsertGifButton",
-                  toolbar_location: "bottom",
-                  statusbar: false,
-                  content_style:
-                    "body { font-family:Arial,sans-serif; font-size:14px }",
-                  setup: (editor) => {
-                    editor.ui.registry.addButton("customInsertGifButton", {
-                      text: "GIF",
-                      onAction: () => setShowGifPicker(true),
-                    });
-                  },
-                }}
-                onEditorChange={handleTyping}
-                onKeyDown={handleKeyDown}
-                onInit={(evt, editor) => {
-                  editorRef.current = editor;
-                }}
-              />
-              <a className="ms-3" onClick={handleSendMessage}>
-                <MDBIcon fas icon="paper-plane" />
-              </a>
+            <ChatBoxEditor
+            setShowGifPicker={setShowGifPicker}
+             handleTyping={handleTyping}
+             handleKeyDown={handleKeyDown}
+              handleSendMessage={handleSendMessage}
+              editorRef={editorRef}
+            />
             </MDBCardFooter>
           </MDBCard>
           <Modal
