@@ -37,6 +37,9 @@ const Login = () => {
             console.error('Error during login:', err.response.data);
         }
     };
+    const goSignpu = () =>{
+      navigate("/signup");
+    }
 
     return (
         <form onSubmit={onSubmit}>
@@ -79,6 +82,9 @@ const Login = () => {
                   <MDBBtn className="mb-4" size="lg">
                     Login
                   </MDBBtn>
+                  <a className="mb-4" size="sm" onClick={goSignpu}>
+                    Sign up
+                  </a>
                 </MDBCol>
   
                 <MDBCol
